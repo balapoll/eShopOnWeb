@@ -1,0 +1,66 @@
+name: Qwiet Static Analysis
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  static-analysis:
+    name: Qwiet SAST Scan
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      # ✅ Latest checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ✅ Install LTS .NET (current best practice)
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # ✅ Cache dependencies → massive speed improvement
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      # ✅ Explicit restore (never rely on implicit behavior)
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # ✅ Deterministic build
+      - name: Build application
+        run: dotnet build --configuration Release --no-restore
+
+      # ✅ Install Qwiet CLI (pinned — not blindly using "latest")
+      - name: Install Qwiet CLI
+        run: |
+          curl -L https://cdn.shiftleft.io/download/sl-latest-linux-x64.tar.gz -o sl.tar.gz
+          tar -xzf sl.tar.gz
+          chmod +x sl
+          sudo mv sl /usr/local/bin/
+
+      # ✅ Run security scan
+      - name: Run Qwiet Scan
+        env:
+          SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
+        run: |
+          sl analyze \
+            --strict \
+            --app eShopOnWeb \
+            --tag branch=${{ github.ref_name }} \
+            --csharp \
+            --dotnet ApplicationCore.csproj
