@@ -37,14 +37,6 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      # ✅ Explicit restore (never rely on implicit behavior)
-      - name: Restore dependencies
-        run: dotnet restore
-
-      # ✅ Deterministic build
-      - name: Build application
-        run: dotnet build --configuration Release --no-restore
-
       # ✅ Install Qwiet CLI (pinned — not blindly using "latest")
       - name: Install Qwiet CLI
         run: |
