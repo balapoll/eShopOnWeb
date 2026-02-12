@@ -55,4 +55,4 @@ jobs:
             --app eShopOnWeb \
             --tag branch=${{ github.ref_name }} \
             --csharp \
-            --dotnet ApplicationCore.csproj
+            --dotnet src/ApplicationCore/ApplicationCore.csproj
