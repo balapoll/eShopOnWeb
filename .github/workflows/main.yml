@@ -19,6 +19,6 @@ jobs:
       - name: 'Download Qwiet CLI'
         run: "Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip\nExpand-Archive -Path sl.zip -DestinationPath . -Force\n"
       - name: 'Analyze with NextGen Static Analysis'
-        run: '.\sl analyze --strict --app eShopOnWeb --tag branch=${{ github.head_ref || steps.extract_branch.outputs.branch }} --csharp --dotnet src/ApplicationCore/ApplicationCore.csproj'
+        run: '.\sl analyze --strict --app eShopOnWeb2 --tag branch=${{ github.head_ref || steps.extract_branch.outputs.branch }} --csharp --dotnet src/ApplicationCore/ApplicationCore.csproj'
         env:
           SHIFTLEFT_ACCESS_TOKEN: '${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}'
