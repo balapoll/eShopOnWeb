@@ -18,12 +18,6 @@ jobs:
           dotnet-version: '5.0.x'
       - name: 'Download Qwiet CLI'
         run: "Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip\nExpand-Archive -Path sl.zip -DestinationPath . -Force\n"
-      - name: 'Build web API'
-        run: 'dotnet build netcoreWebapi'
-      - name: 'Extract branch name'
-        shell: 'bash'
-        run: 'echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"'
-        id: 'extract_branch'
       - name: 'Analyze with NextGen Static Analysis'
         run: '.\sl analyze --strict --app eShopOnWeb --tag branch=${{ github.head_ref || steps.extract_branch.outputs.branch }} --csharp --dotnet ApplicationCore.csproj'
         env:
