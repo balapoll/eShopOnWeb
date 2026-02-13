@@ -1,58 +1,30 @@
-name: Qwiet Static Analysis
-
-on:
-  pull_request:
-  workflow_dispatch:
+---
+name: 'Qwiet'
+'on':
+  pull_request: null
+  workflow_dispatch: null
   push:
     branches:
-      - main
-      - master
-
+      - 'main'
+      - 'master'
 jobs:
-  static-analysis:
-    name: Qwiet SAST Scan
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      security-events: write
-
+  NextGen-Static-Analysis:
+    runs-on: 'windows-latest'
     steps:
-      # ✅ Latest checkout
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ✅ Install LTS .NET (current best practice)
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: 'actions/checkout@v2'
+      - name: 'Set up .NET'
+        uses: 'actions/setup-dotnet@v1'
         with:
-          dotnet-version: '8.0.x'
-
-      # ✅ Cache dependencies → massive speed improvement
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
-
-      # ✅ Install Qwiet CLI (pinned — not blindly using "latest")
-      - name: Install Qwiet CLI
-        run: |
-          curl -L https://cdn.shiftleft.io/download/sl-latest-linux-x64.tar.gz -o sl.tar.gz
-          tar -xzf sl.tar.gz
-          chmod +x sl
-          sudo mv sl /usr/local/bin/
-
-      # ✅ Run security scan
-      - name: Run Qwiet Scan
+          dotnet-version: '5.0.x'
+      - name: 'Download Qwiet CLI'
+        run: "Invoke-WebRequest -Uri 'https://cdn.shiftleft.io/download/sl-latest-windows-x64.zip' -OutFile sl.zip\nExpand-Archive -Path sl.zip -DestinationPath . -Force\n"
+      - name: 'Build web API'
+        run: 'dotnet build netcoreWebapi'
+      - name: 'Extract branch name'
+        shell: 'bash'
+        run: 'echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"'
+        id: 'extract_branch'
+      - name: 'Analyze with NextGen Static Analysis'
+        run: '.\sl analyze --strict --app eShopOnWeb --tag branch=${{ github.head_ref || steps.extract_branch.outputs.branch }} --csharp --dotnet ApplicationCore.csproj'
         env:
-          SHIFTLEFT_ACCESS_TOKEN: ${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}
-        run: |
-          sl analyze \
-            --strict \
-            --app eShopOnWeb \
-            --tag branch=${{ github.ref_name }} \
-            --csharp \
-            --dotnet src/ApplicationCore/ApplicationCore.csproj
+          SHIFTLEFT_ACCESS_TOKEN: '${{ secrets.SHIFTLEFT_ACCESS_TOKEN }}'
